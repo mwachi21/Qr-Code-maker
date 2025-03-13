@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Generator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            text-align: center;
+        }
+        h1 {
+            color: #333;
+        }
+        form {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 10px;
+            display: inline-block;
+            text-align: left;
+        }
+        label {
+            font-weight: bold;
+            margin-top: 10px;
+            display: block;
+        }
+        select, input, button {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .qr-container {
+            margin-top: 20px;
+        }
+        img {
+            margin-top: 10px;
+            border: 2px solid #333;
+            padding: 10px;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>QR Code Generator</h1>
+
+    <form action="/qrcode" method="post">
+        <label for="type">QR Code Type:</label>
+        <select name="type" id="type">
+            <option value="link">Link</option>
+            <option value="contact">Contact</option>
+        </select>
+
+        <label>Enter Data:</label>
+        <input type="text" name="data" required placeholder="Enter your link or contact info...">
+
+        <label for="format">Format:</label>
+        <select name="format" id="format">
+            <option value="png">PNG</option>
+            <option value="svg">SVG</option>
+        </select>
+
+        <label for="style">Style:</label>
+        <select name="style" id="style">
+            <option value="square">Default (Square)</option>
+            <option value="rounded">Rounded (Dots)</option>
+        </select>
+
+        <button type="submit">Generate QR Code</button>
+    </form>
+
+    {% if qr_code %}
+        <div class="qr-container">
+            <h2>Generated QR Code</h2>
+            <img src="data:image/{{ format }};base64,{{ qr_code }}" alt="QR Code">
+            <br>
+            <a href="/download/{{ format }}?data={{ data }}" download>
+                <button>Download QR Code</button>
+            </a>
+        </div>
+    {% endif %}
+
+</body>
+</html>

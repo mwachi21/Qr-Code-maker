@@ -1,0 +1,7 @@
+flask
+pyqrcode
+pypng
+qrcode[pil]
+qrcodegen  # For rounded QR codes
+
+# pip install -r requirements.txt
