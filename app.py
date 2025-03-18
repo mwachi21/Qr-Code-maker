@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, send_file
 import qrcode
-from qrcode.image.pil import PilImage  # Explicitly import Pillow supportimport qrcode
+from qrcode.image.pil import PilImage  # Explicitly import Pillow support
 import qrcode.image.styles.moduledrawers as md
 import io
 import base64
@@ -17,7 +17,7 @@ def generate_qr():
     file_format = request.form.get('format', 'png').lower()
     style = request.form.get('style', 'square').lower()
 
-    # Handle data input
+    # Handle data input for different QR types (link or contact)
     if qr_type == 'link':
         data = request.form.get('data', '')
     elif qr_type == 'contact':
@@ -47,6 +47,7 @@ END:VCARD"""
         qr = qrcode.make(data)
         img = qr
 
+    # Save QR code to buffer in the chosen format
     buffer = io.BytesIO()
     if file_format == 'png':
         img.save(buffer, format="PNG")
@@ -62,14 +63,19 @@ END:VCARD"""
     buffer.seek(0)
     encoded_qr = base64.b64encode(buffer.getvalue()).decode()
 
+    # Pass the QR code data, format, extension, and input data to the template
     return render_template('index.html', qr_code=encoded_qr, format=file_format, extension=extension, data=data)
 
 @app.route('/download/<file_format>')
 def download_qr(file_format):
-    data = request.args.get('data', '')
-    qr = qrcode.make(data)
+    data = request.args.get('data', '')  # Get data from query string (ensure it is passed)
+    if not data:
+        return "No data provided for the QR code", 400
+
+    qr = qrcode.make(data)  # Generate QR code based on the data
     buffer = io.BytesIO()
 
+    # Save QR code to buffer in the requested format (PNG or SVG)
     if file_format == 'png':
         qr.save(buffer, format="PNG")
         mimetype = 'image/png'
