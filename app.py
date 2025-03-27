@@ -1,94 +1,65 @@
+
 from flask import Flask, render_template, request, send_file
 import qrcode
-from qrcode.image.pil import PilImage  # Explicitly import Pillow support
-import qrcode.image.styles.moduledrawers as md
-import io
-import base64
+from qrcode.image.pil import PilImage
+from PIL import Image
+import os
 
 app = Flask(__name__)
 
-@app.route('/')
+# Ensure 'static' folder exists for storing QR codes
+if not os.path.exists("static"):
+    os.makedirs("static")
+
+@app.route("/")
 def index():
-    return render_template('index.html', qr_code=None)
+    return render_template("index.html")
 
-@app.route('/qrcode', methods=['POST'])
+@app.route("/generate", methods=["POST"])
 def generate_qr():
-    qr_type = request.form.get('type', 'link').lower()
-    file_format = request.form.get('format', 'png').lower()
-    style = request.form.get('style', 'square').lower()
+    qr_type = request.form.get("qr_type")
+    data = request.form.get("data")
+    qr_color = request.form.get("qr_color", "#000000")
+    logo = request.files.get("logo")
 
-    # Handle data input for different QR types (link or contact)
-    if qr_type == 'link':
-        data = request.form.get('data', '')
-    elif qr_type == 'contact':
-        name = request.form.get('name', 'John Doe')
-        phone = request.form.get('phone', '+1234567890')
-        email = request.form.get('email', 'example@email.com')
-        org = request.form.get('org', 'My Company')
-        data = f"""BEGIN:VCARD
-VERSION:3.0
-FN:{name}
-ORG:{org}
-TEL:{phone}
-EMAIL:{email}
-END:VCARD"""
-    else:
-        return "Invalid type", 400
-
-    # Choose module drawer (style)
-    if style == 'rounded':
-        qr = qrcode.QRCode(
-            error_correction=qrcode.constants.ERROR_CORRECT_L
-        )
-        qr.add_data(data)
-        qr.make(fit=True)
-        img = qr.make_image(image_factory=qrcode.image.pil.PilImage, module_drawer=md.RoundedModuleDrawer())
-    else:
-        qr = qrcode.make(data)
-        img = qr
-
-    # Save QR code to buffer in the chosen format
-    buffer = io.BytesIO()
-    if file_format == 'png':
-        img.save(buffer, format="PNG")
-        mimetype = 'image/png'
-        extension = 'png'
-    elif file_format == 'svg':
-        img.save(buffer, format="SVG")
-        mimetype = 'image/svg+xml'
-        extension = 'svg'
-    else:
-        return "Invalid format", 400
-
-    buffer.seek(0)
-    encoded_qr = base64.b64encode(buffer.getvalue()).decode()
-
-    # Pass the QR code data, format, extension, and input data to the template
-    return render_template('index.html', qr_code=encoded_qr, format=file_format, extension=extension, data=data)
-
-@app.route('/download/<file_format>')
-def download_qr(file_format):
-    data = request.args.get('data', '')  # Get data from query string (ensure it is passed)
     if not data:
-        return "No data provided for the QR code", 400
+        return "No data provided!", 400
 
-    qr = qrcode.make(data)  # Generate QR code based on the data
-    buffer = io.BytesIO()
+    if qr_type == "vcf":
+        data = f"BEGIN:VCARD\nFN:{data}\nEND:VCARD"
 
-    # Save QR code to buffer in the requested format (PNG or SVG)
-    if file_format == 'png':
-        qr.save(buffer, format="PNG")
-        mimetype = 'image/png'
-        filename = "qrcode.png"
-    elif file_format == 'svg':
-        qr.save(buffer, format="SVG")
-        mimetype = 'image/svg+xml'
-        filename = "qrcode.svg"
-    else:
-        return "Invalid format", 400
+    qr = qrcode.QRCode(box_size=10, border=4)
+    qr.add_data(data)
+    qr.make(fit=True)
 
-    buffer.seek(0)
-    return send_file(buffer, as_attachment=True, mimetype=mimetype, download_name=filename)
+    img = qr.make_image(fill_color=qr_color, back_color="white")
 
-if __name__ == '__main__':
+    # Add logo if provided
+    if logo:
+        logo_path = "static/logo.png"
+        logo.save(logo_path)
+        img = img.convert("RGBA")
+        logo_img = Image.open(logo_path)
+        
+        # Resize logo
+        logo_size = (img.size[0] // 4, img.size[1] // 4)
+        logo_img = logo_img.resize(logo_size, Image.ANTIALIAS)
+
+        # Paste logo at center
+        pos = ((img.size[0] - logo_size[0]) // 2, (img.size[1] - logo_size[1]) // 2)
+        img.paste(logo_img, pos, logo_img)
+
+    qr_path = "static/qr-code.png"
+    img.save(qr_path)
+
+    return qr_path
+
+@app.route("/download/<format>")
+def download_qr(format):
+    qr_path = "static/qr-code.png"
+    if format == "svg":
+        qr_path = "static/qr-code.svg"
+    return send_file(qr_path, as_attachment=True)
+
+if __name__ == "__main__":
     app.run(debug=True)
