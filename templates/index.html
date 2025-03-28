@@ -1,23 +1,5 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QR Code Generator</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class'
-        }
-    </script>
-</head>
-<body class="bg-gray-100 dark:bg-gray-900 transition-colors">
-    <!-- Navbar -->
-    <nav class="p-4 flex justify-between items-center bg-white dark:bg-gray-800 shadow-md">
-        <h1 class="text-xl font-bold text-gray-900 dark:text-white">QR Code Generator</h1>
-        <button onclick="toggleDarkMode()" class="px-4 py-2 bg-gray-800 text-white rounded-md">Toggle Dark Mode</button>
-    </nav>
-
+{% extends 'layout.html' %}
+{% block body%}
     <div class="flex justify-center items-center min-h-screen">
         <div class="p-6 bg-white dark:bg-gray-800 shadow-lg rounded-xl glassmorphism w-96">
             <h2 class="text-center text-lg font-semibold mb-4 text-gray-900 dark:text-white">Generate QR Code</h2>
@@ -66,58 +48,4 @@
             </div>
         </div>
     </div>
-
-    <!-- Footer -->
-    <footer class="mt-6 p-4 text-center bg-white dark:bg-gray-800 text-gray-600 dark:text-white">
-        © 2025 QR Generator. All rights reserved.
-    </footer>
-
-    <script>
-        function toggleDarkMode() {
-            document.documentElement.classList.toggle('dark');
-        }
-
-        function toggleFields() {
-            const qrType = document.getElementById("qrType").value;
-            document.getElementById("urlInput").classList.toggle("hidden", qrType === "vcf");
-            document.getElementById("vcfFields").classList.toggle("hidden", qrType !== "vcf");
-        }
-
-        function generateQR() {
-            let formData = new FormData();
-            let qrType = document.getElementById("qrType").value;
-            formData.append("qr_type", qrType);
-            formData.append("qr_color", document.getElementById("qrColor").value);
-
-            if (qrType === "url") {
-                formData.append("data", document.getElementById("qrData").value);
-            } else {
-                let vcfData = {
-                    name: document.getElementById("vcfName").value,
-                    phone: document.getElementById("vcfPhone").value,
-                    email: document.getElementById("vcfEmail").value,
-                    address: document.getElementById("vcfAddress").value
-                };
-                formData.append("vcf_data", JSON.stringify(vcfData));
-            }
-
-            let fileInput = document.getElementById("qrLogo");
-            if (fileInput.files.length > 0) {
-                formData.append("logo", fileInput.files[0]);
-            }
-
-            fetch("/generate", {
-                method: "POST",
-                body: formData
-            })
-            .then(response => response.text())
-            .then(imageUrl => {
-                document.getElementById("qrPreview").src = imageUrl;
-                document.getElementById("downloadPng").href = "/download/png";
-                document.getElementById("downloadSvg").href = "/download/svg";
-            })
-            .catch(error => console.error("Error:", error));
-        }
-    </script>
-</body>
-</html>
+{% endblock %}
