@@ -1,2 +1,2 @@
-cd /static/css;
-npx @tailwindcss/cli -i input.css -o output.css --watch;
+cd static/css;
+npx @tailwindcss/cli -i /static/css/input.css -o /static/css/output.css --watch;
